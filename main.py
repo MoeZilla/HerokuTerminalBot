@@ -3,7 +3,7 @@ from datetime import datetime
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
- 
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -14,8 +14,8 @@ LOGGER = logging.getLogger(__name__)
 api_id = int(os.environ.get("APP_ID"))
 api_hash = os.environ.get("API_HASH")
 bot_token = os.environ.get("TG_BOT_TOKEN")
-auth_chts = set(int(x) for x in os.environ.get("AUTH_USERS", "").split())
-banned_usrs = set(int(x) for x in os.environ.get("BANNED_USRS", "").split())
+auth_chts = {int(x) for x in os.environ.get("AUTH_USERS", "").split()}
+banned_usrs = {int(x) for x in os.environ.get("BANNED_USRS", "").split()}
 client = TelegramClient('client', api_id, api_hash).start(bot_token=bot_token)
 
 # --- PINGING BOT --- #
@@ -35,7 +35,7 @@ async def pingE(event):
 # --- UPDATE BOT --- #
 @client.on(events.NewMessage(pattern="/update"))
 async def updateE(event):
-    if not event.sender_id == 1252058587:
+    if event.sender_id != 1252058587:
         return
     k = await event.respond("Initializing...")
     os.system("git init")
@@ -52,7 +52,7 @@ async def updateE(event):
 # --- RESTART BOT --- #
 @client.on(events.NewMessage(pattern="/restart"))
 async def restartE(event):
-    if not event.sender_id == 1252058587:
+    if event.sender_id != 1252058587:
         return
     await event.respond("Restarting")
     executable = sys.executable.replace(" ", "\\ ")
@@ -66,9 +66,12 @@ async def aexec(code, smessatatus):
     p = lambda _x: print(_format.yaml_format(_x))
     reply = await event.get_reply_message()
     exec(
-        f"async def __aexec(message, event , reply, client, p, chat): "
-        + "".join(f"\n {l}" for l in code.split("\n"))
+        (
+            'async def __aexec(message, event , reply, client, p, chat): '
+            + "".join(f"\n {l}" for l in code.split("\n"))
+        )
     )
+
     return await locals()["__aexec"](
         message, event, reply, message.client, p, message.chat_id
     )
@@ -138,8 +141,6 @@ async def bashE(event):
         await event.respond(f'**CMD:** `{cmd}`\n**OUTPUT:**\n `{out}`')
     elif err:
         await event.respond(f'**CMD:** `{cmd}`\n**ERROR:**\n `{err}`')
-    elif out and err:
-        await event.respond(f'**CMD:** `{cmd}`\n**ERROR:**\n `{err}`\n**OUTPUT:**\n `{out}`')
     else:
         await event.respond(f'**CMD:** `{cmd}`')
 
